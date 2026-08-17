@@ -1,0 +1,149 @@
+# API version used for Deployment resources
+apiVersion: apps/v1
+
+# Resource type
+kind: Deployment
+
+# Metadata contains information about the Deployment
+metadata:
+  # Name of the Deployment
+  name: nginx-deployment
+
+# Desired configuration of the Deployment
+spec:
+
+  # Number of Nginx Pods we want to run
+  replicas: 3
+
+  # Selector tells the Deployment which Pods it manages
+  selector:
+    matchLabels:
+      # This must match the label inside template.metadata.labels
+      app: nginx
+
+  # Template defines how the Pods should be created
+  template:
+
+    # Labels assigned to every Pod created by this Deployment
+    metadata:
+      labels:
+        # Pod will have the label app=nginx
+        # The Service will use this label to find these Pods
+        app: nginx
+
+    # Pod specification
+    spec:
+      containers:
+
+        # Container name
+        - name: nginx
+
+          # Nginx Docker image
+          image: nginx:latest
+
+          # Port exposed by the Nginx container
+          # Nginx listens on port 80
+          ports:
+            - containerPort: 80
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+
+
+-----------------------------------------------
+service file:
+
+
+# API version for Service
+apiVersion: v1
+
+# Resource type
+kind: Service
+
+# Service metadata
+metadata:
+  # Name of the Service
+  name: nginx-nodeport-service
+
+# Service configuration
+spec:
+
+  # NodePort exposes the Service on a port of every worker node
+  type: NodePort
+
+  # Service uses this selector to find the Nginx Pods
+  # This MUST match the Pod label in the Deployment
+  selector:
+    app: nginx
+
+  # Port configuration
+  ports:
+
+    # Communication protocol
+    - protocol: TCP
+
+      # Kubernetes Service port
+      # Clients inside the cluster can access the Service on port 80
+      port: 80
+
+      # Port on the Nginx container
+      # Nginx is listening on port 80
+      targetPort: 80
+
+      # Port exposed on every Kubernetes worker node
+      # We will access the application using NODE-IP:30080
+      nodePort: 30080
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-nodeport-service
+spec:
+  type: NodePort
+
+  selector:
+    app: nginx
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+
+
+mkdir nginx-app
+cd nginx-app
+
+vi nginx-deployment.yaml
+vi nginx-nodeport-service.yaml
+
+kubectl apply -f nginx-deployment.yaml
+deployment.apps/nginx-deployment created
+
+kubectl get deployment
+
+kubectl apply -f nginx-nodeport-service.yaml
+
+http://NODE-IP:30080
+curl http://<NODE-IP>:30080
